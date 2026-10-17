@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bike-Sharing Hourly Demand</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:900px;margin:30px auto;padding:0 18px;background:#f5f7fa;color:#182b3a}h1{font-size:1.7rem}section{background:white;border:1px solid #dbe2e9;border-radius:10px;padding:20px;margin:18px 0}fieldset{border:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}label{display:flex;flex-direction:column;gap:5px}input,select,button{font:inherit;padding:9px;border:1px solid #aab8c5;border-radius:5px}button{background:#176b87;color:white;cursor:pointer;margin-top:16px}output{display:block;white-space:pre-wrap;margin-top:14px}p{line-height:1.65}.error{color:#b42318}
+</style>
+</head>
+<body>
+<h1>Bike-Sharing Hourly Demand</h1>
+<p>Estimate total rentals per hour (rides/hour), not available inventory. Inputs and results are not stored. The model is not retrained by the app.</p>
+<p id="status" role="status">Checking model...</p>
+<section>
+<h2>1. Hourly demand prediction</h2>
+<p>Scenario A uses dates in 2011-2012. Temperature, humidity, and wind speed are dataset-normalized values from 0 to 1, not degrees Celsius or percentages.</p>
+<form id="prediction-form" novalidate><fieldset>
+<label>Date<input name="date" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" pattern="201[12]-[0-9]{2}-[0-9]{2}" value="2012-01-02" required></label>
+<label>Original season code (1-4)<select name="season"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
+<label>A hour (0-23)<input name="hr" type="number" min="0" max="23" step="1" value="8" required></label>
+<label>Holiday<select name="holiday"><option value="0">0: No</option><option value="1">1: Yes</option></select></label>
+<label>Original weather code<select name="weathersit"><option value="1">1: Clear or partly cloudy</option><option value="2">2: Mist or cloudy</option><option value="3">3: Light rain or light snow</option><option value="4">4: Heavy precipitation or severe weather</option></select></label>
+<label>Normalized temperature<input name="temp" type="number" min="0" max="1" step="any" value="0.3" required></label>
+<label>Normalized humidity<input name="hum" type="number" min="0" max="1" step="any" value="0.5" required></label>
+<label>Normalized wind speed<input name="windspeed" type="number" min="0" max="1" step="any" value="0.1" required></label>
+</fieldset><button type="submit">Predict hourly demand</button></form>
+<output id="prediction-result" aria-live="polite"></output>
+</section>
+<section>
+<h2>2. Scenario comparison</h2>
+<p>Scenario B changes only the hour. All other values match A. The difference is B-A: a model scenario difference, not a causal effect.</p>
+<form id="comparison-form" novalidate><label>B hour (0-23)<input id="b-hour" type="number" min="0" max="23" step="1" value="18" required></label><button type="submit">Compare A and B</button></form>
+<output id="comparison-result" aria-live="polite"></output>
+</section>
+<section>
+<h2>3. Error calculation</h2>
+<p>Enter a known prediction and an actual count. Residual = actual - predicted. Absolute error = the absolute residual. No new prediction is needed.</p>
+<form id="error-form" novalidate><fieldset>
+<label>Predicted demand (rides/hour)<input name="predicted" type="number" min="0" step="any" value="100" required></label>
+<label>Actual count (integer, 0-1000000)<input name="actual" type="number" min="0" max="1000000" step="1" value="120" required></label>
+</fieldset><button type="submit">Calculate error</button></form>
+<output id="error-result" aria-live="polite"></output>
+</section>
+<script>
+const predictionForm = document.getElementById('prediction-form');
+function validInputs(form, target){
+  for(const input of form.elements){
+    if(input.willValidate && !input.validity.valid){
+      const output = document.getElementById(target);
+      output.className = 'error';
+      output.textContent = `Please enter a valid value for ${input.name || input.id}. Check the required format and range.`;
+      input.focus();
+      return false;
+    }
+  }
+  return true;
+}
+function scenarioA(){
+  const data = Object.fromEntries(new FormData(predictionForm));
+  for(const key of Object.keys(data)){if(key !== 'date') data[key] = Number(data[key]);}
+  return data;
+}
+async function submit(path, data, target, render){
+  const output = document.getElementById(target);
+  output.className = ''; output.textContent = 'Calculating...';
+  try{
+    const response = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+    let result;
+    try{result = await response.json();}
+    catch{throw new Error('The service returned an invalid response.');}
+    if(!response.ok) throw new Error(typeof result.detail === 'string' && /^[\x00-\x7f]*$/.test(result.detail) ? result.detail : 'Request failed. Check the inputs and service status.');
+    output.textContent = render(result);
+  }catch(error){
+    output.className = 'error';
+    output.textContent = error instanceof TypeError ? 'Cannot connect to the service. Check that it is running.' : error.message || 'Request failed.';
+  }
+}
+predictionForm.addEventListener('submit', event => {
+  event.preventDefault();
+  if(!validInputs(predictionForm, 'prediction-result')) return;
+  submit('/predict', scenarioA(), 'prediction-result', r => `Predicted demand: ${r.prediction.toFixed(2)} ${r.unit}`);
+});
+document.getElementById('comparison-form').addEventListener('submit', event => {
+  event.preventDefault();
+  if(!validInputs(predictionForm, 'comparison-result') || !validInputs(event.target, 'comparison-result')) return;
+  const a = scenarioA(), b = {...a, hr:Number(document.getElementById('b-hour').value)};
+  submit('/compare', {a,b}, 'comparison-result', r => `A: ${r.a.toFixed(2)}; B: ${r.b.toFixed(2)}; B-A: ${r.difference.toFixed(2)} ${r.unit} (not causal)`);
+});
+document.getElementById('error-form').addEventListener('submit', event => {
+  event.preventDefault();
+  if(!validInputs(event.target, 'error-result')) return;
+  const data = new FormData(event.target);
+  submit('/error', {predicted:Number(data.get('predicted')), actual:Number(data.get('actual'))}, 'error-result', r => `Residual: ${r.residual.toFixed(2)}; Absolute error: ${r.absolute_error.toFixed(2)} ${r.unit}`);
+});
+fetch('/health').then(async response => {
+  const status = document.getElementById('status');
+  if(!response.ok){status.textContent = 'Model not ready. Error calculation is available; prediction and comparison are unavailable.'; return;}
+  const data = await response.json();
+  status.textContent = `Model ready; environment: ${data.environment}; message: ${data.message}; purpose: ${data.purpose === 'ci-test' ? 'synthetic CI test (not a selected model)' : 'selected model'}`;
+}).catch(() => {document.getElementById('status').textContent = 'Cannot connect to the service.';});
+</script>
+</body>
+</html>
