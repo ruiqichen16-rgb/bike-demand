@@ -1,3 +1,4 @@
+"""A small real HTTP check of the three required application functions."""
 
 import argparse
 import json
