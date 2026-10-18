@@ -39,7 +39,7 @@ def features():
 def test_features_column_order_types_and_calendar():
     module = features()
     frame = module.make_frame(SAMPLE)
-    assert module.COLUMNS == []
+    assert module.COLUMNS == COLUMNS
     assert frame.columns.tolist() == COLUMNS
     assert frame.dtypes.astype(str).tolist() == ["int64"] * 8 + ["float64"] * 3
     assert frame.iloc[0].tolist() == [1, 1, 1, 8, 0, 1, 1, 1, 0.3, 0.5, 0.1]
