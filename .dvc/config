@@ -1,0 +1,5 @@
+[core]
+    remote = myazure
+['remote "myazure"']
+    url = azure://dvc/bike-demand
+    account_name = wut2026

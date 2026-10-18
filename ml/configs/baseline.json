@@ -1,0 +1,9 @@
+{
+  "name": "baseline",
+  "version": "v1",
+  "experiment": "BikeBaseline",
+  "n_estimators": 32,
+  "max_depth": 8,
+  "random_state": 42,
+  "n_jobs": 1
+}
