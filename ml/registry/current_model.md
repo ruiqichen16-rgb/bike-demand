@@ -1,0 +1,13 @@
+# Current Exported Model (Local Manifest, Not a Model Registry)
+
+- model_sha256: `e2673e4ff15189ad61177f79f7e321e1ec308551347d09de552d53b1a685111f`
+- features: `['season', 'yr', 'mnth', 'hr', 'holiday', 'weekday', 'workingday', 'weathersit', 'temp', 'hum', 'windspeed']`
+- sklearn_version: `1.9.1`
+- run_id: `8b37de33e2ed4ec8a73eb2c74fd03084`
+- code_sha: `fc2c759f31d7ebd5c6fe0c9333050287549f8dc9`
+- dataset_version: `v2`
+- dataset_dvc_hash: `531a810a27543ccf6e981ecefd3ccc3f.dir`
+- purpose: `selected`
+- validation_mae: `82.17346254959278`
+
+validation_mae unit: rides/hour. The model is a byte-identical copy of the original run artifact. Load only trusted local model files.

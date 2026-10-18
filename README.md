@@ -55,7 +55,39 @@ Direct pushes to dev, staging, and main are not allowed.
 
 &#x20;  creates the environment file, and builds the production image only.
 
+## 
+
+## Models
 
 
 
+1\. Model: RandomForestRegressor.
+
+
+
+2\. Data: UCI Bike Sharing. Version v1 uses January-June 2011, while v2
+
+&#x20;  uses the full year 2011.
+
+
+
+3\. Selection: the lowest MAE on the same 2012Q1 validation set.
+
+
+
+4\. Selected run: <8b37de33e2ed4ec8a73eb2c74fd03084>.
+
+
+
+5\. Validation MAE: <82.1735> rides/hour.
+
+
+
+Data and model files are tracked with DVC and stored in Azure.
+
+
+
+See ml/README\_data.md for data versions and ml/README\_experiments.md for
+
+experiment results and model limitations.
 
