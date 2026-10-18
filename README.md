@@ -13,7 +13,7 @@ from historical date, hour, and weather inputs. It stores no business data.
 
 ## Team
 
-1.Chen ruiqi: application, HTTP interface, tests.
+1.Chen ruiqi: application, HTTP interface, tests,CI/CD.
 
 2.Yang qialun: data, training, CI/CD.
 
@@ -90,4 +90,50 @@ Data and model files are tracked with DVC and stored in Azure.
 See ml/README\_data.md for data versions and ml/README\_experiments.md for
 
 experiment results and model limitations.
+
+
+
+### Code flow from commit to production
+
+
+
+1\. Commit on a feature branch and open a pull request against dev; the request
+
+&#x20;  runs tests, quality, and image-build in parallel, with no cloud secret.
+
+
+
+2\. After one approval and three green checks, merge into dev, then promote dev
+
+&#x20;  to staging and to main through separate pull requests.
+
+
+
+3\. With ENABLE\_CD=true, a push to staging restores the selected model, writes
+
+&#x20;  runtime/deploy.env, builds and runs the image, then removes the container; a
+
+&#x20;  push to main restores the model and builds the production image only.
+
+
+
+### Branches and pipeline triggers
+
+
+
+1\. Any pull request triggers tests, quality, and image-build.
+
+
+
+2\. A push to dev triggers the same three checks; a push to staging or main also
+
+&#x20;  triggers the environment stage when ENABLE\_CD=true.
+
+
+
+3\. A push to a feature branch triggers nothing; dev, staging, and main are
+
+&#x20;  protected and need one approval plus three successful checks to merge.
+
+
 
